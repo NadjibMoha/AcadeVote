@@ -1,0 +1,8 @@
+node_modules
+.env
+.git
+artifacts
+cache
+client/node_modules
+client/dist
+server/node_modules
