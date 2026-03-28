@@ -48,4 +48,20 @@ router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user });
 });
 
+router.get('/users/search', authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    const { q } = req.query;
+    if (!q || q.length < 1) return res.json([]);
+    
+    const { rows } = await pool.query(
+      `SELECT user_id, username, email, role FROM users WHERE role = 'voter' AND (username ILIKE $1 OR email ILIKE $1) LIMIT 10`,
+      [`%${q}%`]
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

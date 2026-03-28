@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Tabs, Tab, TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Autocomplete, CircularProgress } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import apiClient from '../../services/apiClient';
@@ -11,7 +11,10 @@ const VoterManagementPage = () => {
   const [elections, setElections] = useState([]);
   const [selectedElection, setSelectedElection] = useState('');
   const [voters, setVoters] = useState([]);
-  const [individualUserId, setIndividualUserId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [searching, setSearching] = useState(false);
   const [csvContent, setCsvContent] = useState('');
   const [csvPreview, setCsvPreview] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -30,6 +33,26 @@ const VoterManagementPage = () => {
     });
   }, []);
 
+  // Debounced user search
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 1) {
+      setSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await apiClient.get(`/auth/users/search?q=${encodeURIComponent(searchQuery)}`);
+        setSearchResults(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
   const fetchVoters = async (electionId) => {
     if (!electionId) return;
     try {
@@ -46,10 +69,13 @@ const VoterManagementPage = () => {
   };
 
   const handleAddIndividual = async () => {
+    if (!selectedUser) return;
     try {
-      await apiClient.post(`/elections/${selectedElection}/voters`, { userId: parseInt(individualUserId) });
-      showToast('Voter added successfully', 'success');
-      setIndividualUserId('');
+      await apiClient.post(`/elections/${selectedElection}/voters`, { userId: selectedUser.user_id });
+      showToast(`${selectedUser.username} added successfully`, 'success');
+      setSelectedUser(null);
+      setSearchQuery('');
+      setSearchResults([]);
       fetchVoters(selectedElection);
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to add voter', 'error');
@@ -127,14 +153,43 @@ const VoterManagementPage = () => {
         </Tabs>
         <Box sx={{ p: 3 }}>
           {tabValue === 0 && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField 
-                label="User ID" 
-                value={individualUserId} 
-                onChange={(e) => setIndividualUserId(e.target.value)}
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <Autocomplete
                 sx={{ flexGrow: 1 }}
+                options={searchResults}
+                getOptionLabel={(option) => `${option.username} (${option.email})`}
+                value={selectedUser}
+                onChange={(e, newValue) => setSelectedUser(newValue)}
+                inputValue={searchQuery}
+                onInputChange={(e, newInput) => setSearchQuery(newInput)}
+                loading={searching}
+                noOptionsText={searchQuery ? "No voters found" : "Type to search..."}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Search voter by username or email"
+                    placeholder="e.g. voter1 or voter1@uni.edu"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {searching && <CircularProgress color="inherit" size={20} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.user_id}>
+                    <Box>
+                      <Typography variant="body1" fontWeight="bold">{option.username}</Typography>
+                      <Typography variant="body2" color="text.secondary">{option.email}</Typography>
+                    </Box>
+                  </li>
+                )}
               />
-              <Button variant="contained" onClick={handleAddIndividual} disabled={!individualUserId}>
+              <Button variant="contained" onClick={handleAddIndividual} disabled={!selectedUser} sx={{ mt: 1, whiteSpace: 'nowrap' }}>
                 Add to Election
               </Button>
             </Box>
