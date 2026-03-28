@@ -1,6 +1,6 @@
 # AcadeVote 🎓
 
-A production-ready **blockchain-based academic voting system** built with Solidity, Node.js, React, and PostgreSQL. Votes are recorded on the Ethereum blockchain via server-side signing — voters never interact with wallets or browser extensions. Personal identity data lives exclusively off-chain; only pseudonymous voter tokens go on-chain.
+A production-ready **blockchain-based academic voting system** built with Solidity, Node.js, React, and PostgreSQL. Votes are recorded on the Ethereum blockchain via server-side signing voters never interact with wallets or browser extensions. Personal identity data lives exclusively off-chain; only pseudonymous voter tokens go on-chain.
 
 ## Tech Stack
 
