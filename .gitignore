@@ -6,3 +6,16 @@ typechain-types/
 *.log
 dist/
 build/
+
+# Local Python Environments
+.venv/
+
+# Analysis and Testing artifacts
+slither_report.txt
+slither_postfix_report*.txt
+coverage/
+coverage.json
+server/coverage/
+
+# Downloaded Binaries
+k6

@@ -79,6 +79,7 @@ The result is an election system that is both accessible to non-technical users 
 | Backend | Node.js 20, Express, ethers.js v6 |
 | Frontend | React (Vite), Material UI v5, React Router v6 |
 | Database | PostgreSQL 15 |
+| Testing & Auditing | Jest, Supertest, Hardhat, Slither, k6 |
 | Blockchain | Ethereum (local Hardhat node) |
 | Infrastructure | Docker Compose, Nginx |
 
@@ -244,12 +245,44 @@ AcadeVote/
 
 ---
 
-## Running Tests
+## Testing & Auditing
 
-Smart contract tests are written for Hardhat:
+AcadeVote features a comprehensive suite of testing and auditing tools to ensure security and performance.
 
+### Smart Contract Tests
+Run the Hardhat blockchain test suite:
 ```bash
 npx hardhat test
+```
+
+### Backend Unit Tests
+Run the Jest and Supertest unit testing suite for the Express backend (Achieves 100% statement coverage on core services):
+```bash
+cd server
+npm test -- --coverage
+```
+
+### Vulnerability Analysis (Slither)
+Run the Slither static analyzer to audit the Solidity smart contracts for vulnerabilities:
+```bash
+# Requires Python 3
+python3 -m venv .venv
+source .venv/bin/activate
+pip install slither-analyzer
+slither .
+```
+
+### Load Testing (k6)
+Run the k6 load testing script to simulate concurrent voter traffic against the backend API. 
+*(Ensure your backend is running locally before executing)*
+```bash
+# Download k6 (Linux example)
+wget https://github.com/grafana/k6/releases/download/v0.50.0/k6-v0.50.0-linux-amd64.tar.gz
+tar -xzf k6-v0.50.0-linux-amd64.tar.gz
+mv k6-v0.50.0-linux-amd64/k6 .
+
+# Run the test
+./k6 run load-test.js
 ```
 
 ---

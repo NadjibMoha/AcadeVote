@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -18,9 +18,9 @@ contract VotingContract is Ownable, ReentrancyGuard {
 
     Candidate[] public candidates;
     mapping(uint256 => bool) public hasVoted; // keyed by voterToken
-    VoterRegistry public voterRegistry;
-    uint256 public startTime;
-    uint256 public endTime;
+    VoterRegistry public immutable voterRegistry;
+    uint256 public immutable startTime;
+    uint256 public immutable endTime;
     bool public resultsPublished;
 
     event VoteCast(uint256 indexed voterToken, uint256 indexed candidateId, uint256 timestamp);
@@ -33,24 +33,24 @@ contract VotingContract is Ownable, ReentrancyGuard {
     }
 
     constructor(
-        uint256 _startTime,
-        uint256 _endTime,
-        string[] memory _candidateNames,
-        string[] memory _candidateDescriptions,
-        address _voterRegistryAddress
+        uint256 startTime_,
+        uint256 endTime_,
+        string[] memory candidateNames,
+        string[] memory candidateDescriptions,
+        address voterRegistryAddress
     ) Ownable(msg.sender) {
-        require(_startTime < _endTime, "End time must be after start time");
-        require(_candidateNames.length == _candidateDescriptions.length, "Mismatched candidate arrays");
-        require(_candidateNames.length >= 2, "Minimum 2 candidates required");
+        require(startTime_ < endTime_, "End time must be after start time");
+        require(candidateNames.length == candidateDescriptions.length, "Mismatched candidate arrays");
+        require(candidateNames.length >= 2, "Minimum 2 candidates required");
 
-        startTime = _startTime;
-        endTime = _endTime;
-        voterRegistry = VoterRegistry(_voterRegistryAddress);
+        startTime = startTime_;
+        endTime = endTime_;
+        voterRegistry = VoterRegistry(voterRegistryAddress);
 
-        for (uint i = 0; i < _candidateNames.length; i++) {
+        for (uint i = 0; i < candidateNames.length; i++) {
             candidates.push(Candidate({
-                name: _candidateNames[i],
-                description: _candidateDescriptions[i],
+                name: candidateNames[i],
+                description: candidateDescriptions[i],
                 voteCount: 0
             }));
         }
@@ -58,18 +58,18 @@ contract VotingContract is Ownable, ReentrancyGuard {
 
     /**
      * @dev Cast a vote for a candidate
-     * @param _voterToken The pseudonymous uint256 token of the voter
-     * @param _candidateId The index of the candidate
+     * @param voterToken The pseudonymous uint256 token of the voter
+     * @param candidateId The index of the candidate
      */
-    function castVote(uint256 _voterToken, uint256 _candidateId) external onlyOwner nonReentrant electionActive {
-        require(voterRegistry.isRegistered(_voterToken), "Voter not registered");
-        require(!hasVoted[_voterToken], "Voter has already voted");
-        require(_candidateId < candidates.length, "Invalid candidate ID");
+    function castVote(uint256 voterToken, uint256 candidateId) external onlyOwner nonReentrant electionActive {
+        require(voterRegistry.isRegistered(voterToken), "Voter not registered");
+        require(!hasVoted[voterToken], "Voter has already voted");
+        require(candidateId < candidates.length, "Invalid candidate ID");
 
-        hasVoted[_voterToken] = true;
-        candidates[_candidateId].voteCount += 1;
+        hasVoted[voterToken] = true;
+        candidates[candidateId].voteCount += 1;
 
-        emit VoteCast(_voterToken, _candidateId, block.timestamp);
+        emit VoteCast(voterToken, candidateId, block.timestamp);
     }
 
     /**
